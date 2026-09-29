@@ -37,148 +37,34 @@ main{padding:28px;max-width:1000px;width:100%;margin:auto}.hero{background:linea
 <script>
 const SUPABASE_URL="https://efvlrkpcuqossfohbeef.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_r1okE3aMTNFbHyI6ko5aCg_T8-b7THt";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
-const KEY="learnahead_demo_v1";
-const subjects={
- math:{name:"Mathematics",icon:"📐",lessons:[
-  {id:"m1",title:"Adding and subtracting integers",concept:"Integers are whole numbers. They can be positive, negative, or zero. On a number line, positive numbers are to the right of zero and negative numbers are to the left.",example:"Example: −3 + 7 = 4. Start at −3, then move 7 steps to the right. You land on 4.",visual:`<div class="number-line"><div class="nl-arrow">←</div><div class="nl-track"><span>−4</span><span>−3</span><span>−2</span><span>−1</span><span class="zero">0</span><span>1</span><span>2</span><span>3</span><span>4</span></div><div class="nl-arrow">→</div></div>`,vocab:[["integer","a whole number, such as −3, 0, or 8"],["subtract","take one number away from another"]]},
-  {id:"m2",title:"Multiplying and dividing integers",concept:"When you multiply or divide integers, first look at their signs. Same signs give a positive answer. Different signs give a negative answer.",example:"Example: (−6) × 4 = −24. The signs are different, so the answer is negative. 6 × 4 = 24, so the answer is −24.",vocab:[["multiply","find the total in equal groups"],["divide","split a number into equal groups"]]},
-  {id:"m3",title:"Fractions and decimals",concept:"Fractions and decimals can show the same amount. For example, three quarters is the same as 0.75.",example:"Example: 0.75 = 75/100 = 3/4. We can use either form to describe the same amount.",visual:`<div class="fraction-visual"><div class="fraction-grid"><i></i><i></i><i></i><i class="empty"></i></div><strong>3/4 = 0.75</strong></div>`,vocab:[["numerator","the top number of a fraction"],["denominator","the bottom number of a fraction"]]},
-  {id:"m4",title:"Ratios and proportions",concept:"A ratio compares two amounts. We can simplify ratios by dividing both parts by the same number.",example:"Example: 6 red counters and 3 blue counters gives a ratio of 6:3, which simplifies to 2:1.",vocab:[["ratio","a comparison between amounts"],["simplify","make a ratio or fraction easier to read"]]},
-  {id:"m5",title:"Algebraic expressions",concept:"An algebraic expression uses numbers, letters, and operations. A letter can stand for an unknown number.",example:"Example: If x = 4, then 3x + 2 = 3 × 4 + 2 = 14.",vocab:[["variable","a letter that represents a value"],["expression","numbers, letters, and operations written together"]]}
- ]},
- science:{name:"Science",icon:"🔬",lessons:[
-  {id:"s1",title:"Plant and animal cells",concept:"Cells are the tiny building blocks of living things. Plant and animal cells have a cell membrane, cytoplasm, and nucleus. Plant cells also have a cell wall and chloroplasts.",example:"A chloroplast helps a plant make food using light. This process is called photosynthesis.",visual:`<div class="cell-diagram"><div class="cell-circle"><span class="cell-nucleus">Nucleus</span><span class="cell-chloro">Chloroplast</span><span class="cell-label">Cell</span></div><div class="visual-caption">Plant cells have chloroplasts and a cell wall.</div></div>`,vocab:[["cell","the basic building block of a living thing"],["nucleus","a part of a cell that contains genetic material"]]},
-  {id:"s2",title:"States of matter",concept:"Matter can be a solid, liquid, or gas. The particles are packed and move differently in each state.",example:"When ice is heated, it melts and becomes liquid water. With more heating, the water can become a gas.",visual:`<div class="matter-flow"><div>🧊<b>Solid</b><small>particles stay close</small></div><span>→</span><div>💧<b>Liquid</b><small>particles can move around</small></div><span>→</span><div>💨<b>Gas</b><small>particles spread out</small></div></div>`,vocab:[["particle","a very small piece of matter"],["melting","changing from a solid into a liquid"]]},
-  {id:"s3",title:"Forces",concept:"A force is a push or a pull. Forces can make an object speed up, slow down, change direction, or change shape.",example:"Friction is a force that can slow an object down when two surfaces rub together.",visual:`<div class="force-diagram"><span>🧍</span><div class="force-arrow">→ Push</div><span>📦</span><div class="force-arrow left">← Friction</div></div>`,vocab:[["force","a push or pull"],["friction","a force that acts when surfaces rub together"]]},
-  {id:"s4",title:"Ecosystems",concept:"An ecosystem includes living things and the environment around them. Organisms depend on each other for food and resources.",example:"Example: In a pond, algae, insects, fish, water, and sunlight are parts of the ecosystem.",vocab:[["ecosystem","living things and their environment"],["organism","a living thing"]]},
-  {id:"s5",title:"Energy",concept:"Energy can be transferred from one place or object to another. It can also change from one form to another.",example:"Example: A battery transfers chemical energy into electrical energy in a circuit.",vocab:[["energy","the ability to cause change"],["transfer","move from one place or form to another"]]}
- ]},
- english:{name:"English",icon:"📖",lessons:[
-  {id:"e1",title:"Paragraph structure",concept:"A good paragraph usually has one main idea. It starts with a topic sentence, adds supporting details, and may finish with a linking or concluding sentence.",example:"Example: Start with your main point. Then add a fact, example, or explanation that supports it.",vocab:[["topic sentence","a sentence that introduces the main idea"],["evidence","information that supports an idea"]]},
-  {id:"e2",title:"Comparing texts",concept:"When you compare two texts, look for what is similar and what is different. You can compare their ideas, language, structure, or purpose.",example:"Example: Text A is funny, whereas Text B is serious. The word 'whereas' helps show a difference.",vocab:[["compare","find similarities and differences"],["contrast","show how things are different"]]},
-  {id:"e3",title:"Sentence structure",concept:"A clear sentence usually has a subject and a verb. Different sentence types can make writing more interesting.",example:"Example: 'The dog ran home.' has a subject, the dog, and a verb, ran.",vocab:[["subject","who or what the sentence is about"],["verb","a word that shows an action or state"]]},
-  {id:"e4",title:"Persuasive writing",concept:"Persuasive writing tries to convince the reader. Strong arguments use clear claims, reasons, and evidence.",example:"Example: 'School gardens are useful because they give students a chance to learn about plants.'",vocab:[["claim","the main point you want the reader to accept"],["evidence","information that supports a claim"]]}
- ]},
- eal:{name:"EAL",icon:"🌍",lessons:[
-  {id:"a1",title:"Academic command words",concept:"Questions use command words to tell you what to do. Words such as describe, explain, compare, identify, and evaluate each ask for a different kind of answer.",example:"Example: 'Explain why plants need light' means you should give a reason. Just writing 'light' is not enough.",vocab:[["describe","give details about something"],["explain","give reasons or show how or why"]]},
-  {id:"a2",title:"Science classroom English",concept:"Science lessons use useful words and sentence starters. Knowing them makes it easier to follow instructions and talk about results.",example:"Example: 'The results show that...' is a useful way to start a sentence when you are talking about evidence.",vocab:[["evidence","information that supports an idea"],["result","what an investigation produces"]]},
-  {id:"a3",title:"Math classroom English",concept:"Math questions use words such as calculate, estimate, simplify, and compare. Learning these words helps you know exactly what to do.",example:"Example: 'Calculate 25% of 80' means find the answer, while 'estimate' means give a sensible approximate answer.",vocab:[["calculate","work out an exact answer"],["estimate","find an answer that is close to the exact value"]]},
-  {id:"a4",title:"Academic vocabulary",concept:"Academic words appear across many subjects. Learning them helps you understand textbooks, questions, and instructions.",example:"Example: 'Identify the main idea' means find and name the main idea.",vocab:[["identify","find and name something"],["justify","give reasons or evidence for an answer"]]}
- ]}
-};
-
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let db={users:{},session:null};
+let saveChain=Promise.resolve();
 function seed(){return {users:{},session:null}}
-let db=JSON.parse(localStorage.getItem(KEY)||"null")||seed();
-let currentProfile=null;
-let authReady=false;
-function save(){localStorage.setItem(KEY,JSON.stringify(db))}
-function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
-function user(){return currentProfile}
-function toast(t){let x=document.createElement("div");x.className="toast";x.textContent=t;document.body.appendChild(x);setTimeout(()=>x.remove(),2300)}
+function user(){return db.session?db.users[db.session]:null}
+function toast(t){let x=document.createElement("div");x.className="toast";x.textContent=t;document.body.appendChild(x);setTimeout(()=>x.remove(),3000)}
 function today(){return new Date().toISOString().slice(0,10)}
-function calcStreak(u){if(!u.activity.length)return 0;let dates=[...new Set(u.activity)].sort().reverse(), cur=new Date(today());let streak=0;for(let d of dates){let ds=new Date(d);let diff=Math.round((cur-ds)/86400000);if(diff===0){streak++;cur=new Date(cur-86400000)}else if(diff===1){streak++;cur=ds}else break}return streak}
+function calcStreak(u){if(!u.activity.length)return 0;let dates=[...new Set(u.activity)].sort().reverse(),cur=new Date(today()),streak=0;for(let d of dates){let ds=new Date(d);let diff=Math.round((cur-ds)/86400000);if(diff===0){streak++;cur=new Date(cur-86400000)}else if(diff===1){streak++;cur=ds}else break}return streak}
 function minutesToday(u){return Math.floor((u.studySecondsByDay?.[today()]||0)/60)}
-function addStudySeconds(sec){let u=user();if(!u)return;u.studySecondsByDay??={};u.studySecondsByDay[today()]=(u.studySecondsByDay[today()]||0)+Math.max(0,Math.floor(sec));if(minutesToday(u)>=u.goal&&!u.activity.includes(today())){u.activity.push(today());u.streak=calcStreak(u)}}
+function addStudySeconds(sec){let u=user();if(!u)return;u.studySecondsByDay??={};u.studySecondsByDay[today()]=(u.studySecondsByDay[today()]||0)+Math.max(0,Math.floor(sec));u.learning_minutes=Object.values(u.studySecondsByDay).reduce((a,v)=>a+Math.floor(Number(v||0)/60),0);if(minutesToday(u)>=u.goal&&!u.activity.includes(today())){u.activity.push(today());u.streak=calcStreak(u)} }
 function stopQuizTimer(){if(window.quizTimer){clearInterval(window.quizTimer);window.quizTimer=null}if(window.currentQuiz?.startedAt){let now=Date.now();window.currentQuiz.elapsedSeconds=Math.max(0,Math.floor((now-window.currentQuiz.startedAt)/1000));}}
 function startQuizTimer(){if(window.quizTimer)clearInterval(window.quizTimer);if(!window.currentQuiz)return;window.currentQuiz.startedAt=Date.now();window.currentQuiz.elapsedSeconds=0;window.quizTimer=setInterval(()=>{if(document.visibilityState==='visible'&&window.currentQuiz){window.currentQuiz.elapsedSeconds=Math.floor((Date.now()-window.currentQuiz.startedAt)/1000);let el=document.getElementById('quizTimer');if(el)el.textContent=formatTime(window.currentQuiz.elapsedSeconds)}},1000)}
-function formatTime(sec){let m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
+function formatTime(sec){let m=Math.floor(sec/60),s=Math.floor(sec%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
 function progress(u){let total=0,done=0;Object.keys(subjects).forEach(k=>{total+=subjects[k].lessons.length;done+=subjects[k].lessons.filter(l=>u.completed.includes(l.id)).length});return total?Math.round(done/total*100):0}
-function ensureUserFields(u){
-  u.completed??=[];u.scores??={};u.coins??=0;u.xp??=0;u.activity??=[];
-  u.minutesByDay??={};u.studySecondsByDay??={};u.streak??=0;u.goal??=20;
-  u.achievements??=[];u.freeze??=0;u.lastLesson??=null;u.avatar??=defaultAvatar();
-}
+function ensureUserFields(u){u.completed??=[];u.scores??={};u.coins??=0;u.xp??=0;u.activity??=[];u.minutesByDay??={};u.studySecondsByDay??={};u.learning_minutes??=0;u.streak??=0;u.goal??=20;u.achievements??=[];u.freeze??=0;u.lastLesson??=null;u.avatar??=defaultAvatar();}
 function defaultAvatar(){return {face:"🙂",hair:"🧢",shirt:"👕",bg:"#dfe4ff"}}
 function avatarMarkup(a,big=false){a=a||defaultAvatar();return `<span class="avatar ${big?"big":""}" style="--avatar-bg:${esc(a.bg||"#dfe4ff")}"><span class="hair">${a.hair||"🧢"}</span><span class="face">${a.face||"🙂"}</span><span class="shirt">${a.shirt||"👕"}</span></span>`}
-function setAvatarPart(part,value){let u=user();u.avatar??=defaultAvatar();u.avatar[part]=value;save();persistProfile();renderProfile()}
-function shell(page,content){
- return `<div class="app"><header class="topbar"><div class="logo">StrikeLearn</div><div class="topstats"><button class="avatar-button" title="Customize avatar" onclick="renderProfile()">${avatarMarkup(user().avatar||defaultAvatar(),false)}</button><span class="pill streak">🔥 ${user().streak} day streak</span><span class="pill coin">🪙 ${user().coins}</span><span class="pill">⭐ ${user().xp} XP</span></div></header><div class="layout"><aside class="sidebar">
- <button class="nav ${page==='home'?'active':''}" onclick="renderHome()">🏠 Dashboard</button>
- <button class="nav ${page==='learn'?'active':''}" onclick="renderLearn()">📚 Learn</button><button class="nav ${page==='practice'?'active':''}" onclick="renderPractice()">✏️ Practice</button><button class="nav ${page==='games'?'active':''}" onclick="renderMiniGames()">🎮 Mini Games</button>
- <button class="nav ${page==='shop'?'active':''}" onclick="renderShop()">🛍️ Shop</button>
- <button class="nav ${page==='profile'?'active':''}" onclick="renderProfile()">👤 Profile</button>
- <button class="nav" onclick="logout()">↪ Log out</button>
- </aside><main>${content}</main></div></div>`;
-}
-function render(){if(!user())return renderAuth();ensureUserFields(user());renderHome()}
-let captchaAnswer=null;
-function checkCaptcha(){let answer=document.getElementById("captchaAnswer");if(!answer||Number(answer.value.trim())!==captchaAnswer){toast("Please solve the CAPTCHA correctly.");if(answer){answer.value="";answer.focus()}return false}return true}
-function renderAuth(mode="login"){
- let a=2+Math.floor(Math.random()*8),b=1+Math.floor(Math.random()*9);captchaAnswer=a+b;
- document.getElementById("root").innerHTML=`<div class="auth"><div class="authbox">
- <div class="logo">StrikeLearn</div><h1>${mode==="login"?"Welcome back":"Create your account"}</h1>
- <p class="muted">${mode==="login"?"Continue your learning journey.":"Start learning ahead of class."}</p>
- ${mode==="signup"?`<div class="field"><label>Nickname</label><input id="nick" placeholder="Your display name"></div>
- <div class="field"><label>Username</label><input id="uname" autocomplete="username" placeholder="Choose a username"></div>`:""}
- <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
- <div class="field"><label>Password</label><input id="pass" type="password" autocomplete="${mode==="login"?"current-password":"new-password"}" placeholder="Password"></div>
- ${mode==="signup"?`<div class="field"><label>School Curriculum</label><select id="curr"><option>Cambridge</option><option>IB</option><option>Other</option></select>
- <div class="field"><label>Year / Grade</label><select id="year">${Array.from({length:7},(_,i)=>`<option>Year ${i+7}</option>`).join("")}</select></div>`:""}
- <div class="field"><label for="captchaAnswer">🤖 Human verification</label><div class="muted" style="font-size:13px;margin:5px 0">Solve to continue: <b>${a} + ${b} = ?</b></div><input id="captchaAnswer" type="number" inputmode="numeric" placeholder="Your answer" autocomplete="off"></div>
- <button class="btn" style="width:100%;margin-top:8px" onclick="${mode==="login"?"login()":"signup()"}">${mode==="login"?"Log in":"Create account"}</button>
- <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px">${mode==="login"?"Don't have an account?":"Already have an account?"} <span class="switch" onclick="renderAuth('${mode==="login"?"signup":"login"}')">${mode==="login"?"Create an account":"Log in"}</span></p>
- </div></div>`
-}
-
-async function signup(){
- let n=document.getElementById("nick")?.value.trim(),un=document.getElementById("uname")?.value.trim().toLowerCase();
- let em=document.getElementById("email")?.value.trim().toLowerCase(),pw=document.getElementById("pass")?.value;
- if(!n||!un||!em||!pw)return toast("Please complete all fields.");
- if(!checkCaptcha())return;
- if(pw.length<6)return toast("Password must be at least 6 characters.");
- const {data,error}=await supabaseClient.auth.signUp({
-   email:em,password:pw,
-   options:{data:{username:un,nickname:n,curriculum:document.getElementById("curr").value,year:document.getElementById("year").value}}
- });
- if(error)return toast(error.message);
- if(!data.session){
-   toast("Account created! Check your email to confirm your account.");
-   renderAuth("login");
-   return;
- }
- await loadProfile(data.user);
-}
-
-async function login(){
- let em=document.getElementById("email")?.value.trim().toLowerCase(),pw=document.getElementById("pass")?.value;
- if(!em||!pw)return toast("Please enter your email and password.");
- if(!checkCaptcha())return;
- const {data,error}=await supabaseClient.auth.signInWithPassword({email:em,password:pw});
- if(error)return toast(error.message);
- await loadProfile(data.user);
-}
-
-async function loadProfile(authUser){
- const {data,error}=await supabaseClient.from("profiles").select("*").eq("id",authUser.id).single();
- if(error){
-   console.error(error);
-   return toast("Signed in, but your profile could not be loaded.");
- }
- const extra=data.app_data&&typeof data.app_data==="object"?data.app_data:{};
- currentProfile={...data,...extra,id:data.id,email:data.email||authUser.email};
- ensureUserFields(currentProfile);
- authReady=true;
- renderHome();
-}
-
-async function persistProfile(){
- const u=user(); if(!u)return;
- const payload={
-   username:u.username,nickname:u.nickname,email:u.email,curriculum:u.curriculum,year:u.year,
-   xp:u.xp,coins:u.coins,streak:u.streak,learning_minutes:Object.values(u.studySecondsByDay||{}).reduce((a,b)=>a+Math.max(0,Number(b)||0),0)/60,
-   app_data:{completed:u.completed,scores:u.scores,activity:u.activity,studySecondsByDay:u.studySecondsByDay,
-     goal:u.goal,achievements:u.achievements,freeze:u.freeze,lastLesson:u.lastLesson,avatar:u.avatar}
- };
- const {error}=await supabaseClient.from("profiles").update(payload).eq("id",u.id);
- if(error)console.error("Profile save failed:",error);
-}
-
-async function logout(){
- await persistProfile();
- await supabaseClient.auth.signOut();
- currentProfile=null;db.session=null;save();renderAuth("login");
-}
+function profileToUser(p){let extra=(p.app_data&&typeof p.app_data==='object')?p.app_data:{};let u={...extra,id:p.id,username:p.username||extra.username||'',nickname:p.nickname||extra.nickname||'',email:p.email||'',curriculum:p.curriculum||extra.curriculum||'Cambridge',year:p.year||extra.year||'Year 7',xp:Number(p.xp||0),coins:Number(p.coins||0),streak:Number(p.streak||0),learning_minutes:Number(p.learning_minutes||0)};ensureUserFields(u);return u}
+function userToAppData(u){return {completed:u.completed,scores:u.scores,activity:u.activity,minutesByDay:u.minutesByDay,studySecondsByDay:u.studySecondsByDay,goal:u.goal,achievements:u.achievements,freeze:u.freeze,lastLesson:u.lastLesson,avatar:u.avatar,email:u.email}}
+function save(){let u=user();if(!u)return Promise.resolve();let payload={username:u.username,nickname:u.nickname,email:u.email,curriculum:u.curriculum,year:u.year,xp:Number(u.xp||0),coins:Number(u.coins||0),streak:Number(u.streak||0),learning_minutes:Number(u.learning_minutes||0),app_data:userToAppData(u)};saveChain=saveChain.then(async()=>{let {error}=await supabaseClient.from('profiles').update(payload).eq('id',u.id);if(error){console.error(error);toast('Could not save your progress: '+error.message)}}).catch(err=>{console.error(err);toast('Could not save your progress.')});return saveChain}
+async function loadProfile(authUser){let {data:p,error}=await supabaseClient.from('profiles').select('*').eq('id',authUser.id).maybeSingle();if(error)throw error;if(!p)throw new Error('Your profile row was not created yet. Please check the signup trigger in Supabase.');let u=profileToUser(p);u.email=authUser.email||u.email;db.users[authUser.id]=u;db.session=authUser.id;return u}
+async function signup(){let n=document.getElementById('nick')?.value.trim(),un=document.getElementById('uname')?.value.trim().toLowerCase(),em=document.getElementById('email')?.value.trim().toLowerCase(),pw=document.getElementById('pass')?.value;if(!n||!un||!em||!pw)return toast('Please complete all fields.');if(!checkCaptcha())return;if(SUPABASE_PUBLISHABLE_KEY.includes('PASTE_YOUR_PUBLISHABLE_KEY_HERE'))return toast('Supabase publishable key is missing from index.html.');let {data,error}=await supabaseClient.auth.signUp({email:em,password:pw,options:{data:{username:un,nickname:n,curriculum:document.getElementById('curr').value,year:document.getElementById('year').value}}});if(error)return toast(error.message);if(data.user){let profile={id:data.user.id,username:un,nickname:n,email:em,curriculum:document.getElementById('curr').value,year:document.getElementById('year').value,xp:0,coins:0,streak:0,learning_minutes:0,...ensureUserFields({})};db.users[data.user.id]=profile;}if(data.session){try{await loadProfile(data.user);renderHome()}catch(e){toast(e.message)}}else{toast('Account created! Check your email to confirm your account, then log in.');renderAuth('login')}}
+async function login(){let em=document.getElementById('email')?.value.trim().toLowerCase(),pw=document.getElementById('pass')?.value;if(!em||!pw)return toast('Please enter your email and password.');if(!checkCaptcha())return;if(SUPABASE_PUBLISHABLE_KEY.includes('PASTE_YOUR_PUBLISHABLE_KEY_HERE'))return toast('Supabase publishable key is missing from index.html.');let {data,error}=await supabaseClient.auth.signInWithPassword({email:em,password:pw});if(error)return toast(error.message);try{await loadProfile(data.user);renderHome()}catch(e){toast(e.message)}}
+async function logout(){let {error}=await supabaseClient.auth.signOut();if(error)toast(error.message);db={users:{},session:null};window.learnState=null;window.practiceState=null;renderAuth('login')}
+function renderAuth(mode='login'){let a=2+Math.floor(Math.random()*8),b=1+Math.floor(Math.random()*9);captchaAnswer=a+b;document.getElementById('root').innerHTML=`<div class="auth"><div class="authbox"><div class="logo">StrikeLearn</div><h1>${mode==='login'?'Welcome back':'Create your account'}</h1><p class="muted">${mode==='login'?'Continue your learning journey.':'Start learning ahead of class.'}</p>${mode==='signup'?`<div class="field"><label>Nickname</label><input id="nick" placeholder="Your display name"></div><div class="field"><label>Username</label><input id="uname" autocomplete="username" placeholder="Choose a username"></div><div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>`:`<div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>`}<div class="field"><label>Password</label><input id="pass" type="password" autocomplete="${mode==='login'?'current-password':'new-password'}" placeholder="Password"></div>${mode==='signup'?`<div class="field"><label>School Curriculum</label><select id="curr"><option>Cambridge</option><option>IB</option><option>Other</option></select></div><div class="field"><label>Year / Grade</label><select id="year">${Array.from({length:7},(_,i)=>`<option>Year ${i+7}</option>`).join('')}</select></div>`:''}<div class="field"><label for="captchaAnswer">🤖 Human verification</label><div class="muted" style="font-size:13px;margin:5px 0">Solve to continue: <b>${a} + ${b} = ?</b></div><input id="captchaAnswer" type="number" inputmode="numeric" placeholder="Your answer" autocomplete="off"></div><button class="btn" style="width:100%;margin-top:8px" onclick="${mode==='login'?'login()':'signup()'}">${mode==='login'?'Log in':'Create account'}</button><p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px">${mode==='login'?"Don't have an account?":"Already have an account?"} <span class="switch" onclick="renderAuth('${mode==='login'?'signup':'login'}')">${mode==='login'?'Create an account':'Log in'}</span></p></div></div>`}
+function render(){if(user())return renderHome();return renderAuth('login')}
+async function bootstrap(){try{if(SUPABASE_PUBLISHABLE_KEY.includes('PASTE_YOUR_PUBLISHABLE_KEY_HERE')){renderAuth('login');toast('Add your Supabase publishable key to index.html first.');return}let {data:{session},error}=await supabaseClient.auth.getSession();if(error)throw error;if(session?.user){await loadProfile(session.user);renderHome()}else renderAuth('login')}catch(e){console.error(e);renderAuth('login');toast(e.message||'Could not connect to Supabase.')}}
+supabaseClient.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){db={users:{},session:null};window.learnState=null;window.practiceState=null;renderAuth('login')}})
 function renderHome(){let u=user(),mins=minutesToday(u),pct=Math.min(100,Math.round(mins/u.goal*100)),p=progress(u);let rec=findNext(u);document.getElementById("root").innerHTML=shell("home",`
  <section class="hero"><h1>Welcome back, ${esc(u.nickname)}! 👋</h1><p>${u.curriculum} · ${u.year} · Keep learning ahead of class.</p></section>
  <div class="grid3"><div class="card"><div class="muted">🔥 Streak</div><div class="big">${u.streak} days</div><div class="muted">Keep your learning habit going.</div></div><div class="card"><div class="muted">🪙 Coins</div><div class="big">${u.coins}</div><div class="muted">Earn coins from learning.</div></div><div class="card"><div class="muted">⭐ XP</div><div class="big">${u.xp}</div><div class="muted">${p}% overall progress</div></div></div>
@@ -231,7 +117,7 @@ function lessonConcepts(l){
 function openLearn(sk,lid){
  stopStudyTimer();
  let s=subjects[sk],l=s.lessons.find(x=>x.id===lid),cs=lessonConcepts(l);
- user().lastLesson=`${sk}:${lid}`;save();persistProfile();
+ user().lastLesson=`${sk}:${lid}`;save();
  window.learnState={sk,lid,concepts:cs,index:0,checkQs:makeQuiz(sk,lid).slice(0,3),score:0,answered:false,startedAt:Date.now(),elapsedSeconds:0};
  document.getElementById("root").innerHTML=shell("learn",`<div class="lessonpage"><button class="btn secondary" onclick="leaveStudy()">← Back to lessons</button><div class="card lesson-section" style="margin-top:14px"><div class="row"><span class="tag">${s.name}</span><span class="tag">⏱ <span id="studyClock">00:00</span></span></div><div id="learnStage"></div><div id="conceptDots" class="concept-dots"></div></div></div>`);
  renderLearnConcept(); startStudyTimer();
@@ -250,7 +136,7 @@ function showLearnCheck(){let st=window.learnState,q=st.checkQs[st.index],box=do
 function normalizeAnswer(v){return String(v??'').trim().toLowerCase().replace(/[−–—]/g,'-').replace(/\s+/g,' ')}
 function answerLearnCheck(i){let st=window.learnState;if(st.answered)return;st.answered=true;let q=st.checkQs[st.index],response=q.type==='input'?document.getElementById('learnAnswer')?.value:q.opts[i],ok=normalizeAnswer(response)===normalizeAnswer(q.ans),buttons=[...document.querySelectorAll('#learnQuiz .option')];buttons.forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.ans)b.classList.add('correct');if(j===i&&!ok)b.classList.add('wrong')});if(q.type==='input'){let inp=document.getElementById('learnAnswer');if(inp){inp.disabled=true;inp.classList.add(ok?'correct':'wrong')}}if(ok)st.score++;document.getElementById('learnQuiz').insertAdjacentHTML('beforeend',`<div class="result" style="margin-top:12px">${ok?'Nice! 🎉':`Not quite. The answer is <b>${q.ans}</b>.` }<br><button class="btn" style="margin-top:10px" onclick="nextLearnCheck()">${st.index===2?'Finish lesson':'Next question →'}</button></div>`)}
 function nextLearnCheck(){let st=window.learnState;st.index++;st.answered=false;if(st.index>=3)return finishLearn();showLearnCheck()}
-function finishLearn(){let st=window.learnState,u=user(),lid=st.lid,first=!u.completed.includes(lid);if(first)u.completed.push(lid);let earned=5+(st.score===3?3:0)+(first?5:0);u.coins+=earned;u.xp+=5+st.score;addStudySeconds(st.elapsedSeconds||0);if(u.completed.length>=3&&!u.achievements.includes('starter'))u.achievements.push('starter');save();persistProfile();stopStudyTimer();document.getElementById('root').innerHTML=shell('learn',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score===3?'🎉':'💪'}</div><h1>Lesson Complete!</h1><div class="big">${st.score}/3</div><p class="muted">You studied for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><p>+${earned} 🪙 &nbsp; +${5+st.score} XP</p><button class="btn" style="margin-top:15px" onclick="renderHome()">Back to Dashboard</button></div>`)}
+function finishLearn(){let st=window.learnState,u=user(),lid=st.lid,first=!u.completed.includes(lid);if(first)u.completed.push(lid);let earned=5+(st.score===3?3:0)+(first?5:0);u.coins+=earned;u.xp+=5+st.score;addStudySeconds(st.elapsedSeconds||0);if(u.completed.length>=3&&!u.achievements.includes('starter'))u.achievements.push('starter');save();stopStudyTimer();document.getElementById('root').innerHTML=shell('learn',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score===3?'🎉':'💪'}</div><h1>Lesson Complete!</h1><div class="big">${st.score}/3</div><p class="muted">You studied for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><p>+${earned} 🪙 &nbsp; +${5+st.score} XP</p><button class="btn" style="margin-top:15px" onclick="renderHome()">Back to Dashboard</button></div>`)}
 
 function renderPractice(){
  stopStudyTimer(); let u=user();
@@ -264,7 +150,7 @@ function showPracticeQuestion(){let st=window.practiceState,q=st.qs[st.index],bo
 function answerPractice(i){let st=window.practiceState;if(st.answered)return;st.answered=true;let q=st.qs[st.index],response=q.type==='input'?document.getElementById('practiceAnswer')?.value:q.opts[i],ok=normalizeAnswer(response)===normalizeAnswer(q.ans),buttons=[...document.querySelectorAll('#practiceBox .option')];buttons.forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.ans)b.classList.add('correct');if(j===i&&!ok)b.classList.add('wrong')});if(q.type==='input'){let inp=document.getElementById('practiceAnswer');if(inp){inp.disabled=true;inp.classList.add(ok?'correct':'wrong')}}if(ok)st.score++;let lesson=subjects[st.sk].lessons.find(x=>x.id===st.lid);let review=!ok?`<div class="practice-review"><h3>📚 Let us review the concept</h3><p>${lesson.concept}</p>${lesson.visual?`<div class="concept-visual">${lesson.visual}</div>`:''}<p><b>Correct answer:</b> ${q.ans}</p><button class="btn secondary" onclick="retryPracticeQuestion()">Try again →</button></div>`:'';document.getElementById('practiceBox').insertAdjacentHTML('beforeend',`<div class="result" style="margin-top:12px">${ok?'Correct! 🎉':'Not quite.'}${review}<br><button class="btn" style="margin-top:10px" onclick="nextPracticeQuestion()">${st.index===st.qs.length-1?'Finish practice':'Next question →'}</button></div>`)}
 function retryPracticeQuestion(){let st=window.practiceState;st.answered=false;showPracticeQuestion()}
 function nextPracticeQuestion(){let st=window.practiceState;st.index++;st.answered=false;if(st.index>=st.qs.length)return finishPractice();showPracticeQuestion()}
-function finishPractice(){let st=window.practiceState,u=user();u.scores[st.lid]=Math.max(u.scores[st.lid]||0,st.score);u.xp+=st.score;u.coins+=Math.floor(st.score/2);addStudySeconds(st.elapsedSeconds||0);save();persistProfile();stopStudyTimer();document.getElementById('root').innerHTML=shell('practice',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score>=8?'🎉':'💪'}</div><h1>Practice Complete!</h1><div class="big">${st.score}/${st.qs.length}</div><p class="muted">You practiced for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><button class="btn" style="margin-top:15px" onclick="renderPractice()">Back to Practice</button></div>`)}
+function finishPractice(){let st=window.practiceState,u=user();u.scores[st.lid]=Math.max(u.scores[st.lid]||0,st.score);u.xp+=st.score;u.coins+=Math.floor(st.score/2);addStudySeconds(st.elapsedSeconds||0);save();stopStudyTimer();document.getElementById('root').innerHTML=shell('practice',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score>=8?'🎉':'💪'}</div><h1>Practice Complete!</h1><div class="big">${st.score}/${st.qs.length}</div><p class="muted">You practiced for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><button class="btn" style="margin-top:15px" onclick="renderPractice()">Back to Practice</button></div>`)}
 function startStudyTimer(){stopStudyTimer();let st=window.learnState||window.practiceState;if(!st)return;st.lastTick=Date.now();window.studyTimer=setInterval(()=>{if(document.visibilityState!=='visible'){st.lastTick=Date.now();return}let now=Date.now();st.elapsedSeconds+=(now-st.lastTick)/1000;st.lastTick=now;let el=document.getElementById('studyClock');if(el)el.textContent=formatTime(Math.floor(st.elapsedSeconds))},250)}
 function stopStudyTimer(){if(window.studyTimer){clearInterval(window.studyTimer);window.studyTimer=null}let st=window.learnState||window.practiceState;if(st&&st.lastTick&&document.visibilityState==='visible'){st.elapsedSeconds+=(Date.now()-st.lastTick)/1000;st.lastTick=Date.now()}}
 function leaveStudy(){stopStudyTimer();window.learnState=null;window.practiceState=null;renderLearn()}
@@ -281,22 +167,14 @@ function startQuickMath(){
 }
 function nextQuickMath(){let g=window.miniGame;if(!g)return;g.total++;g.a=Math.floor(Math.random()*12)+1;g.b=Math.floor(Math.random()*12)+1;g.op=Math.random()<.5?'+':'−';g.answer=g.op==='+'?g.a+g.b:g.a-g.b;let vals=new Set([g.answer]);while(vals.size<4){vals.add(g.answer+(Math.floor(Math.random()*7)-3));}let opts=[...vals].sort(()=>Math.random()-.5);document.getElementById('gameQuestion').textContent=`${g.a} ${g.op} ${g.b} = ?`;document.getElementById('gameOptions').innerHTML=opts.map(v=>`<button class="option" onclick="answerQuickMath(${v})">${v}</button>`).join('')}
 function answerQuickMath(v){let g=window.miniGame;if(!g||g.time<=0)return;if(v===g.answer){g.score++;let sc=document.getElementById('gameScore');if(sc)sc.textContent=g.score;nextQuickMath()}else{toast('Not quite — try the next one!');nextQuickMath()}}
-function finishQuickMath(){let g=window.miniGame;if(!g)return;clearInterval(g.timer);window.miniGame=null;let u=user();let coins=Math.min(30,g.score*2);u.coins+=coins;u.xp+=g.score;save();persistProfile();document.getElementById('root').innerHTML=shell('games',`<div class="card" style="text-align:center;padding:40px"><div style="font-size:52px">🎉</div><h1>Time's up!</h1><div class="big">${g.score}</div><p class="muted">Correct answers in 30 seconds</p><p>+${coins} 🪙 &nbsp; +${g.score} XP</p><button class="btn" onclick="startQuickMath()">Play again</button> <button class="btn secondary" onclick="renderMiniGames()">Back to games</button></div>`)}
+function finishQuickMath(){let g=window.miniGame;if(!g)return;clearInterval(g.timer);window.miniGame=null;let u=user();let coins=Math.min(30,g.score*2);u.coins+=coins;u.xp+=g.score;save();document.getElementById('root').innerHTML=shell('games',`<div class="card" style="text-align:center;padding:40px"><div style="font-size:52px">🎉</div><h1>Time's up!</h1><div class="big">${g.score}</div><p class="muted">Correct answers in 30 seconds</p><p>+${coins} 🪙 &nbsp; +${g.score} XP</p><button class="btn" onclick="startQuickMath()">Play again</button> <button class="btn secondary" onclick="renderMiniGames()">Back to games</button></div>`)}
 function endQuickMath(){let g=window.miniGame;if(g){clearInterval(g.timer);window.miniGame=null}renderMiniGames()}
 
 function renderShop(){let u=user();let items=[["🧊","Streak Freeze","Protect one missed day.",100,"freeze"],["💡","Hint Pack","A future hint for a quiz.",60,"hint"],["✨","Profile Sparkle","A cosmetic profile item.",150,"sparkle"]];document.getElementById("root").innerHTML=shell("shop",`<div class="card"><h1>🛍️ Coin Shop</h1><p class="muted">Spend coins earned from learning. No real-money purchases in this prototype.</p><div>${items.map(it=>`<div class="shopitem"><div><div style="font-size:24px">${it[0]}</div><b>${it[1]}</b><div class="muted">${it[2]}</div></div><button class="btn" ${u.coins<it[3]?"disabled":""} onclick="buy('${it[4]}',${it[3]})">🪙 ${it[3]}</button></div>`).join("")}</div></div>`)}
-function buy(type,cost){let u=user();if(u.coins<cost)return toast("Not enough coins.");u.coins-=cost;if(type==="freeze")u.freeze++;save();persistProfile();toast("Item purchased!");renderShop()}
+function buy(type,cost){let u=user();if(u.coins<cost)return toast("Not enough coins.");u.coins-=cost;if(type==="freeze")u.freeze++;save();toast("Item purchased!");renderShop()}
 function renderProfile(){let u=user();u.avatar??=defaultAvatar();let a=u.avatar;document.getElementById("root").innerHTML=shell("profile",`<div class="grid"><div class="card"><h2>👤 Profile</h2><div class="avatar-card"><div class="avatar-preview">${avatarMarkup(a,true)}</div><div><h3 style="margin-bottom:4px">Customize your avatar</h3><p class="muted">Make your StrikeLearn profile feel like yours.</p><div class="avatar-label">Face</div><div class="avatar-controls">${["🙂","😎","🤓","😄","😮","😴"].map(x=>`<button class="avatar-option ${a.face===x?'active':''}" onclick="setAvatarPart('face','${x}')">${x}</button>`).join('')}</div><div class="avatar-label">Hair / Hat</div><div class="avatar-controls">${["🧢","🎩","🧑‍🎓","🪖","👒","🧑‍🚀"].map(x=>`<button class="avatar-option ${a.hair===x?'active':''}" onclick="setAvatarPart('hair','${x}')">${x}</button>`).join('')}</div><div class="avatar-label">Shirt</div><div class="avatar-controls">${["👕","🥋","🧥","🎽","👔","🦺"].map(x=>`<button class="avatar-option ${a.shirt===x?'active':''}" onclick="setAvatarPart('shirt','${x}')">${x}</button>`).join('')}</div><div class="avatar-label">Background</div><div class="avatar-controls">${[["#dfe4ff","Lavender"],["#dff7ea","Mint"],["#fff0d9","Peach"],["#e8e8e8","Cloud"],["#e2f2ff","Sky"],["#f7e5ff","Pink"]].map(([c,n])=>`<button class="avatar-option ${a.bg===c?'active':''}" style="background:${c}" onclick="setAvatarPart('bg','${c}')">${n}</button>`).join('')}</div></div></div></div></div><div class="card"><h2>📊 Profile Stats</h2><p><b>${esc(u.nickname)}</b></p><p class="muted">@${esc(u.username)}</p><p><span class="tag">${esc(u.curriculum)}</span> <span class="tag">${esc(u.year)}</span></p><hr style="border:0;border-top:1px solid var(--line)"><p>🎯 Daily goal: <b>${u.goal} min</b></p><p>🔥 Streak: <b>${u.streak} days</b></p><p>🪙 Coins: <b>${u.coins}</b></p><p>⭐ XP: <b>${u.xp}</b></p><p>🏆 Achievements: <b>${u.achievements.length}</b></p></div><div class="card"><h2>🏆 Achievements</h2>${u.achievements.includes("perfect")?"<p>💯 Perfect Score — scored 10/10</p>":""}${u.achievements.includes("starter")?"<p>📚 Getting Started — completed 3 lessons</p>":""}${!u.achievements.length?'<p class="muted">Complete lessons and quizzes to unlock achievements.</p>':""}</div></div>`)}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-async function boot(){
-  const {data:{session}}=await supabaseClient.auth.getSession();
-  if(session?.user){await loadProfile(session.user);}
-  else{authReady=true;renderAuth("login");}
-  supabaseClient.auth.onAuthStateChange(async (event,session)=>{
-    if(event==="SIGNED_OUT"){currentProfile=null;renderAuth("login");}
-  });
-}
-boot();
+bootstrap();
 </script>
 </body>
 </html>
