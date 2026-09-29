@@ -58,6 +58,24 @@ function profileToUser(p){let extra=(p.app_data&&typeof p.app_data==='object')?p
 function userToAppData(u){return {completed:u.completed,scores:u.scores,activity:u.activity,minutesByDay:u.minutesByDay,studySecondsByDay:u.studySecondsByDay,goal:u.goal,achievements:u.achievements,freeze:u.freeze,lastLesson:u.lastLesson,avatar:u.avatar,email:u.email}}
 function save(){let u=user();if(!u)return Promise.resolve();let payload={username:u.username,nickname:u.nickname,email:u.email,curriculum:u.curriculum,year:u.year,xp:Number(u.xp||0),coins:Number(u.coins||0),streak:Number(u.streak||0),learning_minutes:Number(u.learning_minutes||0),app_data:userToAppData(u)};saveChain=saveChain.then(async()=>{let {error}=await supabaseClient.from('profiles').update(payload).eq('id',u.id);if(error){console.error(error);toast('Could not save your progress: '+error.message)}}).catch(err=>{console.error(err);toast('Could not save your progress.')});return saveChain}
 async function loadProfile(authUser){let {data:p,error}=await supabaseClient.from('profiles').select('*').eq('id',authUser.id).maybeSingle();if(error)throw error;if(!p)throw new Error('Your profile row was not created yet. Please check the signup trigger in Supabase.');let u=profileToUser(p);u.email=authUser.email||u.email;db.users[authUser.id]=u;db.session=authUser.id;return u}
+let captchaAnswer = null;
+
+function checkCaptcha(){
+  const answer = document.getElementById("captchaAnswer");
+
+  if(!answer || Number(answer.value.trim()) !== captchaAnswer){
+    toast("Please solve the CAPTCHA correctly.");
+
+    if(answer){
+      answer.value = "";
+      answer.focus();
+    }
+
+    return false;
+  }
+
+  return true;
+}
 async function signup(){let n=document.getElementById('nick')?.value.trim(),un=document.getElementById('uname')?.value.trim().toLowerCase(),em=document.getElementById('email')?.value.trim().toLowerCase(),pw=document.getElementById('pass')?.value;if(!n||!un||!em||!pw)return toast('Please complete all fields.');if(!checkCaptcha())return;if(SUPABASE_PUBLISHABLE_KEY.includes('PASTE_YOUR_PUBLISHABLE_KEY_HERE'))return toast('Supabase publishable key is missing from index.html.');let {data,error}=await supabaseClient.auth.signUp({email:em,password:pw,options:{data:{username:un,nickname:n,curriculum:document.getElementById('curr').value,year:document.getElementById('year').value}}});if(error)return toast(error.message);if(data.user){let profile={id:data.user.id,username:un,nickname:n,email:em,curriculum:document.getElementById('curr').value,year:document.getElementById('year').value,xp:0,coins:0,streak:0,learning_minutes:0,...ensureUserFields({})};db.users[data.user.id]=profile;}if(data.session){try{await loadProfile(data.user);renderHome()}catch(e){toast(e.message)}}else{toast('Account created! Check your email to confirm your account, then log in.');renderAuth('login')}}
 async function login(){let em=document.getElementById('email')?.value.trim().toLowerCase(),pw=document.getElementById('pass')?.value;if(!em||!pw)return toast('Please enter your email and password.');if(!checkCaptcha())return;if(SUPABASE_PUBLISHABLE_KEY.includes('PASTE_YOUR_PUBLISHABLE_KEY_HERE'))return toast('Supabase publishable key is missing from index.html.');let {data,error}=await supabaseClient.auth.signInWithPassword({email:em,password:pw});if(error)return toast(error.message);try{await loadProfile(data.user);renderHome()}catch(e){toast(e.message)}}
 async function logout(){let {error}=await supabaseClient.auth.signOut();if(error)toast(error.message);db={users:{},session:null};window.learnState=null;window.practiceState=null;renderAuth('login')}
