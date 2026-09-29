@@ -33,7 +33,11 @@ main{padding:28px;max-width:1000px;width:100%;margin:auto}.hero{background:linea
 </head>
 <body>
 <div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL="https://efvlrkpcuqossfohbeef.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_r1okE3aMTNFbHyI6ko5aCg_T8-b7THt";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const KEY="learnahead_demo_v1";
 const subjects={
  math:{name:"Mathematics",icon:"📐",lessons:[
@@ -66,9 +70,11 @@ const subjects={
 
 function seed(){return {users:{},session:null}}
 let db=JSON.parse(localStorage.getItem(KEY)||"null")||seed();
+let currentProfile=null;
+let authReady=false;
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
-function user(){return db.session?db.users[db.session]:null}
+function user(){return currentProfile}
 function toast(t){let x=document.createElement("div");x.className="toast";x.textContent=t;document.body.appendChild(x);setTimeout(()=>x.remove(),2300)}
 function today(){return new Date().toISOString().slice(0,10)}
 function calcStreak(u){if(!u.activity.length)return 0;let dates=[...new Set(u.activity)].sort().reverse(), cur=new Date(today());let streak=0;for(let d of dates){let ds=new Date(d);let diff=Math.round((cur-ds)/86400000);if(diff===0){streak++;cur=new Date(cur-86400000)}else if(diff===1){streak++;cur=ds}else break}return streak}
@@ -78,10 +84,14 @@ function stopQuizTimer(){if(window.quizTimer){clearInterval(window.quizTimer);wi
 function startQuizTimer(){if(window.quizTimer)clearInterval(window.quizTimer);if(!window.currentQuiz)return;window.currentQuiz.startedAt=Date.now();window.currentQuiz.elapsedSeconds=0;window.quizTimer=setInterval(()=>{if(document.visibilityState==='visible'&&window.currentQuiz){window.currentQuiz.elapsedSeconds=Math.floor((Date.now()-window.currentQuiz.startedAt)/1000);let el=document.getElementById('quizTimer');if(el)el.textContent=formatTime(window.currentQuiz.elapsedSeconds)}},1000)}
 function formatTime(sec){let m=Math.floor(sec/60),s=sec%60;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
 function progress(u){let total=0,done=0;Object.keys(subjects).forEach(k=>{total+=subjects[k].lessons.length;done+=subjects[k].lessons.filter(l=>u.completed.includes(l.id)).length});return total?Math.round(done/total*100):0}
-function ensureUserFields(u){u.completed??=[];u.scores??={};u.coins??=0;u.xp??=0;u.activity??=[];u.minutesByDay??={};u.studySecondsByDay??={};u.streak??=0;u.goal??=20;u.achievements??=[];u.freeze??=0;u.lastLesson??=null;u.avatar??=defaultAvatar()}
+function ensureUserFields(u){
+  u.completed??=[];u.scores??={};u.coins??=0;u.xp??=0;u.activity??=[];
+  u.minutesByDay??={};u.studySecondsByDay??={};u.streak??=0;u.goal??=20;
+  u.achievements??=[];u.freeze??=0;u.lastLesson??=null;u.avatar??=defaultAvatar();
+}
 function defaultAvatar(){return {face:"🙂",hair:"🧢",shirt:"👕",bg:"#dfe4ff"}}
 function avatarMarkup(a,big=false){a=a||defaultAvatar();return `<span class="avatar ${big?"big":""}" style="--avatar-bg:${esc(a.bg||"#dfe4ff")}"><span class="hair">${a.hair||"🧢"}</span><span class="face">${a.face||"🙂"}</span><span class="shirt">${a.shirt||"👕"}</span></span>`}
-function setAvatarPart(part,value){let u=user();u.avatar??=defaultAvatar();u.avatar[part]=value;save();renderProfile()}
+function setAvatarPart(part,value){let u=user();u.avatar??=defaultAvatar();u.avatar[part]=value;save();persistProfile();renderProfile()}
 function shell(page,content){
  return `<div class="app"><header class="topbar"><div class="logo">StrikeLearn</div><div class="topstats"><button class="avatar-button" title="Customize avatar" onclick="renderProfile()">${avatarMarkup(user().avatar||defaultAvatar(),false)}</button><span class="pill streak">🔥 ${user().streak} day streak</span><span class="pill coin">🪙 ${user().coins}</span><span class="pill">⭐ ${user().xp} XP</span></div></header><div class="layout"><aside class="sidebar">
  <button class="nav ${page==='home'?'active':''}" onclick="renderHome()">🏠 Dashboard</button>
@@ -94,19 +104,81 @@ function shell(page,content){
 function render(){if(!user())return renderAuth();ensureUserFields(user());renderHome()}
 let captchaAnswer=null;
 function checkCaptcha(){let answer=document.getElementById("captchaAnswer");if(!answer||Number(answer.value.trim())!==captchaAnswer){toast("Please solve the CAPTCHA correctly.");if(answer){answer.value="";answer.focus()}return false}return true}
-function renderAuth(mode="login"){let a=2+Math.floor(Math.random()*8),b=1+Math.floor(Math.random()*9);captchaAnswer=a+b;document.getElementById("root").innerHTML=`<div class="auth"><div class="authbox">
- <div class="logo">StrikeLearn</div><h1>${mode==="login"?"Welcome back":"Create your account"}</h1><p class="muted">${mode==="login"?"Continue your learning journey.":"Start learning ahead of class."}</p>
- ${mode==="signup"?`<div class="field"><label>Nickname</label><input id="nick" placeholder="Your display name"></div>`:""}
- <div class="field"><label>Username</label><input id="uname" autocomplete="username" placeholder="Choose a username"></div>
+function renderAuth(mode="login"){
+ let a=2+Math.floor(Math.random()*8),b=1+Math.floor(Math.random()*9);captchaAnswer=a+b;
+ document.getElementById("root").innerHTML=`<div class="auth"><div class="authbox">
+ <div class="logo">StrikeLearn</div><h1>${mode==="login"?"Welcome back":"Create your account"}</h1>
+ <p class="muted">${mode==="login"?"Continue your learning journey.":"Start learning ahead of class."}</p>
+ ${mode==="signup"?`<div class="field"><label>Nickname</label><input id="nick" placeholder="Your display name"></div>
+ <div class="field"><label>Username</label><input id="uname" autocomplete="username" placeholder="Choose a username"></div>`:""}
+ <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
  <div class="field"><label>Password</label><input id="pass" type="password" autocomplete="${mode==="login"?"current-password":"new-password"}" placeholder="Password"></div>
- ${mode==="signup"?`<div class="field"><label>School Curriculum</label><select id="curr"><option>Cambridge</option><option>IB</option><option>Other</option></select></div><div class="field"><label>Year / Grade</label><select id="year">${Array.from({length:7},(_,i)=>`<option>Year ${i+7}</option>`).join("")}</select></div>`:""}
+ ${mode==="signup"?`<div class="field"><label>School Curriculum</label><select id="curr"><option>Cambridge</option><option>IB</option><option>Other</option></select>
+ <div class="field"><label>Year / Grade</label><select id="year">${Array.from({length:7},(_,i)=>`<option>Year ${i+7}</option>`).join("")}</select></div>`:""}
  <div class="field"><label for="captchaAnswer">🤖 Human verification</label><div class="muted" style="font-size:13px;margin:5px 0">Solve to continue: <b>${a} + ${b} = ?</b></div><input id="captchaAnswer" type="number" inputmode="numeric" placeholder="Your answer" autocomplete="off"></div>
  <button class="btn" style="width:100%;margin-top:8px" onclick="${mode==="login"?"login()":"signup()"}">${mode==="login"?"Log in":"Create account"}</button>
  <p class="muted" style="text-align:center;margin:14px 0 0;font-size:13px">${mode==="login"?"Don't have an account?":"Already have an account?"} <span class="switch" onclick="renderAuth('${mode==="login"?"signup":"login"}')">${mode==="login"?"Create an account":"Log in"}</span></p>
- </div></div>`}
-function signup(){let n=nick.value.trim(),un=uname.value.trim().toLowerCase(),pw=pass.value;if(!n||!un||!pw)return toast("Please complete all fields.");if(db.users[un])return toast("That username is already taken.");if(!checkCaptcha())return;db.users[un]={id:uid(),nickname:n,username:un,password:btoa(unescape(encodeURIComponent(pw))),curriculum:curr.value,year:year.value,completed:[],scores:{},coins:0,xp:0,activity:[],minutesByDay:{},streak:0,goal:20,achievements:[],freeze:0,lastLesson:null,avatar:defaultAvatar()};db.session=un;save();renderHome()}
-function login(){let un=uname.value.trim().toLowerCase(),pw=pass.value,u=db.users[un];if(!u||u.password!==btoa(unescape(encodeURIComponent(pw))))return toast("Incorrect username or password.");if(!checkCaptcha())return;db.session=un;ensureUserFields(u);save();renderHome()}
-function logout(){db.session=null;save();renderAuth()}
+ </div></div>`
+}
+
+async function signup(){
+ let n=document.getElementById("nick")?.value.trim(),un=document.getElementById("uname")?.value.trim().toLowerCase();
+ let em=document.getElementById("email")?.value.trim().toLowerCase(),pw=document.getElementById("pass")?.value;
+ if(!n||!un||!em||!pw)return toast("Please complete all fields.");
+ if(!checkCaptcha())return;
+ if(pw.length<6)return toast("Password must be at least 6 characters.");
+ const {data,error}=await supabaseClient.auth.signUp({
+   email:em,password:pw,
+   options:{data:{username:un,nickname:n,curriculum:document.getElementById("curr").value,year:document.getElementById("year").value}}
+ });
+ if(error)return toast(error.message);
+ if(!data.session){
+   toast("Account created! Check your email to confirm your account.");
+   renderAuth("login");
+   return;
+ }
+ await loadProfile(data.user);
+}
+
+async function login(){
+ let em=document.getElementById("email")?.value.trim().toLowerCase(),pw=document.getElementById("pass")?.value;
+ if(!em||!pw)return toast("Please enter your email and password.");
+ if(!checkCaptcha())return;
+ const {data,error}=await supabaseClient.auth.signInWithPassword({email:em,password:pw});
+ if(error)return toast(error.message);
+ await loadProfile(data.user);
+}
+
+async function loadProfile(authUser){
+ const {data,error}=await supabaseClient.from("profiles").select("*").eq("id",authUser.id).single();
+ if(error){
+   console.error(error);
+   return toast("Signed in, but your profile could not be loaded.");
+ }
+ const extra=data.app_data&&typeof data.app_data==="object"?data.app_data:{};
+ currentProfile={...data,...extra,id:data.id,email:data.email||authUser.email};
+ ensureUserFields(currentProfile);
+ authReady=true;
+ renderHome();
+}
+
+async function persistProfile(){
+ const u=user(); if(!u)return;
+ const payload={
+   username:u.username,nickname:u.nickname,email:u.email,curriculum:u.curriculum,year:u.year,
+   xp:u.xp,coins:u.coins,streak:u.streak,learning_minutes:Object.values(u.studySecondsByDay||{}).reduce((a,b)=>a+Math.max(0,Number(b)||0),0)/60,
+   app_data:{completed:u.completed,scores:u.scores,activity:u.activity,studySecondsByDay:u.studySecondsByDay,
+     goal:u.goal,achievements:u.achievements,freeze:u.freeze,lastLesson:u.lastLesson,avatar:u.avatar}
+ };
+ const {error}=await supabaseClient.from("profiles").update(payload).eq("id",u.id);
+ if(error)console.error("Profile save failed:",error);
+}
+
+async function logout(){
+ await persistProfile();
+ await supabaseClient.auth.signOut();
+ currentProfile=null;db.session=null;save();renderAuth("login");
+}
 function renderHome(){let u=user(),mins=minutesToday(u),pct=Math.min(100,Math.round(mins/u.goal*100)),p=progress(u);let rec=findNext(u);document.getElementById("root").innerHTML=shell("home",`
  <section class="hero"><h1>Welcome back, ${esc(u.nickname)}! 👋</h1><p>${u.curriculum} · ${u.year} · Keep learning ahead of class.</p></section>
  <div class="grid3"><div class="card"><div class="muted">🔥 Streak</div><div class="big">${u.streak} days</div><div class="muted">Keep your learning habit going.</div></div><div class="card"><div class="muted">🪙 Coins</div><div class="big">${u.coins}</div><div class="muted">Earn coins from learning.</div></div><div class="card"><div class="muted">⭐ XP</div><div class="big">${u.xp}</div><div class="muted">${p}% overall progress</div></div></div>
@@ -159,7 +231,7 @@ function lessonConcepts(l){
 function openLearn(sk,lid){
  stopStudyTimer();
  let s=subjects[sk],l=s.lessons.find(x=>x.id===lid),cs=lessonConcepts(l);
- user().lastLesson=`${sk}:${lid}`;save();
+ user().lastLesson=`${sk}:${lid}`;save();persistProfile();
  window.learnState={sk,lid,concepts:cs,index:0,checkQs:makeQuiz(sk,lid).slice(0,3),score:0,answered:false,startedAt:Date.now(),elapsedSeconds:0};
  document.getElementById("root").innerHTML=shell("learn",`<div class="lessonpage"><button class="btn secondary" onclick="leaveStudy()">← Back to lessons</button><div class="card lesson-section" style="margin-top:14px"><div class="row"><span class="tag">${s.name}</span><span class="tag">⏱ <span id="studyClock">00:00</span></span></div><div id="learnStage"></div><div id="conceptDots" class="concept-dots"></div></div></div>`);
  renderLearnConcept(); startStudyTimer();
@@ -178,7 +250,7 @@ function showLearnCheck(){let st=window.learnState,q=st.checkQs[st.index],box=do
 function normalizeAnswer(v){return String(v??'').trim().toLowerCase().replace(/[−–—]/g,'-').replace(/\s+/g,' ')}
 function answerLearnCheck(i){let st=window.learnState;if(st.answered)return;st.answered=true;let q=st.checkQs[st.index],response=q.type==='input'?document.getElementById('learnAnswer')?.value:q.opts[i],ok=normalizeAnswer(response)===normalizeAnswer(q.ans),buttons=[...document.querySelectorAll('#learnQuiz .option')];buttons.forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.ans)b.classList.add('correct');if(j===i&&!ok)b.classList.add('wrong')});if(q.type==='input'){let inp=document.getElementById('learnAnswer');if(inp){inp.disabled=true;inp.classList.add(ok?'correct':'wrong')}}if(ok)st.score++;document.getElementById('learnQuiz').insertAdjacentHTML('beforeend',`<div class="result" style="margin-top:12px">${ok?'Nice! 🎉':`Not quite. The answer is <b>${q.ans}</b>.` }<br><button class="btn" style="margin-top:10px" onclick="nextLearnCheck()">${st.index===2?'Finish lesson':'Next question →'}</button></div>`)}
 function nextLearnCheck(){let st=window.learnState;st.index++;st.answered=false;if(st.index>=3)return finishLearn();showLearnCheck()}
-function finishLearn(){let st=window.learnState,u=user(),lid=st.lid,first=!u.completed.includes(lid);if(first)u.completed.push(lid);let earned=5+(st.score===3?3:0)+(first?5:0);u.coins+=earned;u.xp+=5+st.score;addStudySeconds(st.elapsedSeconds||0);if(u.completed.length>=3&&!u.achievements.includes('starter'))u.achievements.push('starter');save();stopStudyTimer();document.getElementById('root').innerHTML=shell('learn',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score===3?'🎉':'💪'}</div><h1>Lesson Complete!</h1><div class="big">${st.score}/3</div><p class="muted">You studied for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><p>+${earned} 🪙 &nbsp; +${5+st.score} XP</p><button class="btn" style="margin-top:15px" onclick="renderHome()">Back to Dashboard</button></div>`)}
+function finishLearn(){let st=window.learnState,u=user(),lid=st.lid,first=!u.completed.includes(lid);if(first)u.completed.push(lid);let earned=5+(st.score===3?3:0)+(first?5:0);u.coins+=earned;u.xp+=5+st.score;addStudySeconds(st.elapsedSeconds||0);if(u.completed.length>=3&&!u.achievements.includes('starter'))u.achievements.push('starter');save();persistProfile();stopStudyTimer();document.getElementById('root').innerHTML=shell('learn',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score===3?'🎉':'💪'}</div><h1>Lesson Complete!</h1><div class="big">${st.score}/3</div><p class="muted">You studied for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><p>+${earned} 🪙 &nbsp; +${5+st.score} XP</p><button class="btn" style="margin-top:15px" onclick="renderHome()">Back to Dashboard</button></div>`)}
 
 function renderPractice(){
  stopStudyTimer(); let u=user();
@@ -192,7 +264,7 @@ function showPracticeQuestion(){let st=window.practiceState,q=st.qs[st.index],bo
 function answerPractice(i){let st=window.practiceState;if(st.answered)return;st.answered=true;let q=st.qs[st.index],response=q.type==='input'?document.getElementById('practiceAnswer')?.value:q.opts[i],ok=normalizeAnswer(response)===normalizeAnswer(q.ans),buttons=[...document.querySelectorAll('#practiceBox .option')];buttons.forEach((b,j)=>{b.disabled=true;if(q.opts[j]===q.ans)b.classList.add('correct');if(j===i&&!ok)b.classList.add('wrong')});if(q.type==='input'){let inp=document.getElementById('practiceAnswer');if(inp){inp.disabled=true;inp.classList.add(ok?'correct':'wrong')}}if(ok)st.score++;let lesson=subjects[st.sk].lessons.find(x=>x.id===st.lid);let review=!ok?`<div class="practice-review"><h3>📚 Let us review the concept</h3><p>${lesson.concept}</p>${lesson.visual?`<div class="concept-visual">${lesson.visual}</div>`:''}<p><b>Correct answer:</b> ${q.ans}</p><button class="btn secondary" onclick="retryPracticeQuestion()">Try again →</button></div>`:'';document.getElementById('practiceBox').insertAdjacentHTML('beforeend',`<div class="result" style="margin-top:12px">${ok?'Correct! 🎉':'Not quite.'}${review}<br><button class="btn" style="margin-top:10px" onclick="nextPracticeQuestion()">${st.index===st.qs.length-1?'Finish practice':'Next question →'}</button></div>`)}
 function retryPracticeQuestion(){let st=window.practiceState;st.answered=false;showPracticeQuestion()}
 function nextPracticeQuestion(){let st=window.practiceState;st.index++;st.answered=false;if(st.index>=st.qs.length)return finishPractice();showPracticeQuestion()}
-function finishPractice(){let st=window.practiceState,u=user();u.scores[st.lid]=Math.max(u.scores[st.lid]||0,st.score);u.xp+=st.score;u.coins+=Math.floor(st.score/2);addStudySeconds(st.elapsedSeconds||0);save();stopStudyTimer();document.getElementById('root').innerHTML=shell('practice',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score>=8?'🎉':'💪'}</div><h1>Practice Complete!</h1><div class="big">${st.score}/${st.qs.length}</div><p class="muted">You practiced for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><button class="btn" style="margin-top:15px" onclick="renderPractice()">Back to Practice</button></div>`)}
+function finishPractice(){let st=window.practiceState,u=user();u.scores[st.lid]=Math.max(u.scores[st.lid]||0,st.score);u.xp+=st.score;u.coins+=Math.floor(st.score/2);addStudySeconds(st.elapsedSeconds||0);save();persistProfile();stopStudyTimer();document.getElementById('root').innerHTML=shell('practice',`<div class="card" style="text-align:center;padding:35px"><div style="font-size:48px">${st.score>=8?'🎉':'💪'}</div><h1>Practice Complete!</h1><div class="big">${st.score}/${st.qs.length}</div><p class="muted">You practiced for <b>${formatTime(st.elapsedSeconds||0)}</b>.</p><button class="btn" style="margin-top:15px" onclick="renderPractice()">Back to Practice</button></div>`)}
 function startStudyTimer(){stopStudyTimer();let st=window.learnState||window.practiceState;if(!st)return;st.lastTick=Date.now();window.studyTimer=setInterval(()=>{if(document.visibilityState!=='visible'){st.lastTick=Date.now();return}let now=Date.now();st.elapsedSeconds+=(now-st.lastTick)/1000;st.lastTick=now;let el=document.getElementById('studyClock');if(el)el.textContent=formatTime(Math.floor(st.elapsedSeconds))},250)}
 function stopStudyTimer(){if(window.studyTimer){clearInterval(window.studyTimer);window.studyTimer=null}let st=window.learnState||window.practiceState;if(st&&st.lastTick&&document.visibilityState==='visible'){st.elapsedSeconds+=(Date.now()-st.lastTick)/1000;st.lastTick=Date.now()}}
 function leaveStudy(){stopStudyTimer();window.learnState=null;window.practiceState=null;renderLearn()}
@@ -209,14 +281,22 @@ function startQuickMath(){
 }
 function nextQuickMath(){let g=window.miniGame;if(!g)return;g.total++;g.a=Math.floor(Math.random()*12)+1;g.b=Math.floor(Math.random()*12)+1;g.op=Math.random()<.5?'+':'−';g.answer=g.op==='+'?g.a+g.b:g.a-g.b;let vals=new Set([g.answer]);while(vals.size<4){vals.add(g.answer+(Math.floor(Math.random()*7)-3));}let opts=[...vals].sort(()=>Math.random()-.5);document.getElementById('gameQuestion').textContent=`${g.a} ${g.op} ${g.b} = ?`;document.getElementById('gameOptions').innerHTML=opts.map(v=>`<button class="option" onclick="answerQuickMath(${v})">${v}</button>`).join('')}
 function answerQuickMath(v){let g=window.miniGame;if(!g||g.time<=0)return;if(v===g.answer){g.score++;let sc=document.getElementById('gameScore');if(sc)sc.textContent=g.score;nextQuickMath()}else{toast('Not quite — try the next one!');nextQuickMath()}}
-function finishQuickMath(){let g=window.miniGame;if(!g)return;clearInterval(g.timer);window.miniGame=null;let u=user();let coins=Math.min(30,g.score*2);u.coins+=coins;u.xp+=g.score;save();document.getElementById('root').innerHTML=shell('games',`<div class="card" style="text-align:center;padding:40px"><div style="font-size:52px">🎉</div><h1>Time's up!</h1><div class="big">${g.score}</div><p class="muted">Correct answers in 30 seconds</p><p>+${coins} 🪙 &nbsp; +${g.score} XP</p><button class="btn" onclick="startQuickMath()">Play again</button> <button class="btn secondary" onclick="renderMiniGames()">Back to games</button></div>`)}
+function finishQuickMath(){let g=window.miniGame;if(!g)return;clearInterval(g.timer);window.miniGame=null;let u=user();let coins=Math.min(30,g.score*2);u.coins+=coins;u.xp+=g.score;save();persistProfile();document.getElementById('root').innerHTML=shell('games',`<div class="card" style="text-align:center;padding:40px"><div style="font-size:52px">🎉</div><h1>Time's up!</h1><div class="big">${g.score}</div><p class="muted">Correct answers in 30 seconds</p><p>+${coins} 🪙 &nbsp; +${g.score} XP</p><button class="btn" onclick="startQuickMath()">Play again</button> <button class="btn secondary" onclick="renderMiniGames()">Back to games</button></div>`)}
 function endQuickMath(){let g=window.miniGame;if(g){clearInterval(g.timer);window.miniGame=null}renderMiniGames()}
 
 function renderShop(){let u=user();let items=[["🧊","Streak Freeze","Protect one missed day.",100,"freeze"],["💡","Hint Pack","A future hint for a quiz.",60,"hint"],["✨","Profile Sparkle","A cosmetic profile item.",150,"sparkle"]];document.getElementById("root").innerHTML=shell("shop",`<div class="card"><h1>🛍️ Coin Shop</h1><p class="muted">Spend coins earned from learning. No real-money purchases in this prototype.</p><div>${items.map(it=>`<div class="shopitem"><div><div style="font-size:24px">${it[0]}</div><b>${it[1]}</b><div class="muted">${it[2]}</div></div><button class="btn" ${u.coins<it[3]?"disabled":""} onclick="buy('${it[4]}',${it[3]})">🪙 ${it[3]}</button></div>`).join("")}</div></div>`)}
-function buy(type,cost){let u=user();if(u.coins<cost)return toast("Not enough coins.");u.coins-=cost;if(type==="freeze")u.freeze++;save();toast("Item purchased!");renderShop()}
+function buy(type,cost){let u=user();if(u.coins<cost)return toast("Not enough coins.");u.coins-=cost;if(type==="freeze")u.freeze++;save();persistProfile();toast("Item purchased!");renderShop()}
 function renderProfile(){let u=user();u.avatar??=defaultAvatar();let a=u.avatar;document.getElementById("root").innerHTML=shell("profile",`<div class="grid"><div class="card"><h2>👤 Profile</h2><div class="avatar-card"><div class="avatar-preview">${avatarMarkup(a,true)}</div><div><h3 style="margin-bottom:4px">Customize your avatar</h3><p class="muted">Make your StrikeLearn profile feel like yours.</p><div class="avatar-label">Face</div><div class="avatar-controls">${["🙂","😎","🤓","😄","😮","😴"].map(x=>`<button class="avatar-option ${a.face===x?'active':''}" onclick="setAvatarPart('face','${x}')">${x}</button>`).join('')}</div><div class="avatar-label">Hair / Hat</div><div class="avatar-controls">${["🧢","🎩","🧑‍🎓","🪖","👒","🧑‍🚀"].map(x=>`<button class="avatar-option ${a.hair===x?'active':''}" onclick="setAvatarPart('hair','${x}')">${x}</button>`).join('')}</div><div class="avatar-label">Shirt</div><div class="avatar-controls">${["👕","🥋","🧥","🎽","👔","🦺"].map(x=>`<button class="avatar-option ${a.shirt===x?'active':''}" onclick="setAvatarPart('shirt','${x}')">${x}</button>`).join('')}</div><div class="avatar-label">Background</div><div class="avatar-controls">${[["#dfe4ff","Lavender"],["#dff7ea","Mint"],["#fff0d9","Peach"],["#e8e8e8","Cloud"],["#e2f2ff","Sky"],["#f7e5ff","Pink"]].map(([c,n])=>`<button class="avatar-option ${a.bg===c?'active':''}" style="background:${c}" onclick="setAvatarPart('bg','${c}')">${n}</button>`).join('')}</div></div></div></div></div><div class="card"><h2>📊 Profile Stats</h2><p><b>${esc(u.nickname)}</b></p><p class="muted">@${esc(u.username)}</p><p><span class="tag">${esc(u.curriculum)}</span> <span class="tag">${esc(u.year)}</span></p><hr style="border:0;border-top:1px solid var(--line)"><p>🎯 Daily goal: <b>${u.goal} min</b></p><p>🔥 Streak: <b>${u.streak} days</b></p><p>🪙 Coins: <b>${u.coins}</b></p><p>⭐ XP: <b>${u.xp}</b></p><p>🏆 Achievements: <b>${u.achievements.length}</b></p></div><div class="card"><h2>🏆 Achievements</h2>${u.achievements.includes("perfect")?"<p>💯 Perfect Score — scored 10/10</p>":""}${u.achievements.includes("starter")?"<p>📚 Getting Started — completed 3 lessons</p>":""}${!u.achievements.length?'<p class="muted">Complete lessons and quizzes to unlock achievements.</p>':""}</div></div>`)}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-render();
+async function boot(){
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  if(session?.user){await loadProfile(session.user);}
+  else{authReady=true;renderAuth("login");}
+  supabaseClient.auth.onAuthStateChange(async (event,session)=>{
+    if(event==="SIGNED_OUT"){currentProfile=null;renderAuth("login");}
+  });
+}
+boot();
 </script>
 </body>
 </html>
